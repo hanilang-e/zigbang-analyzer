@@ -27,83 +27,50 @@ avg_df = load_avg_df()
 # ================================
 # 1. 직방 매물 1개 크롤링 함수
 # ================================
+# (파일 상단에 'from webdriver_manager.chrome import ChromeDriverManager'가 있다면 삭제하세요.)
+
 def scrape_one_zigbang(url: str) -> dict:
     """
     직방 원룸 매물 URL을 받아서
     주소 / 관리비 / 보증금 / 월세 / 전용면적 / 상세설명을 딕셔너리로 반환
     (app.py 로직 기반)
     """
+    
+    # --- 🚨 (수정됨) Streamlit 배포용 드라이버 설정 ---
     options = Options()
-    # 디버깅 다 끝나면 아래 주석을 풀고 headless 모드로 돌려도 됨
-    # options.add_argument("--headless=new")
+    options.add_argument("--headless") 
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu") # 충돌(Crash) 방지용
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36")
 
+    # (수정됨) webdriver-manager 대신, packages.txt로 설치한 시스템 드라이버 경로 사용
     driver = webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()),
+        service=Service('/usr/bin/chromedriver'), 
         options=options
     )
+    # ---------------------------------------------------
 
     try:
         driver.get(url)
-        wait = WebDriverWait(driver, 10)
+        # (이하 생략 - 스크래핑 로직)
+        
+        # ... (기존의 스크래핑 로직: 주소, 관리비 등) ...
+        # (이 부분은 직방의 '봇 차단' 때문에 어차피 실패할 것입니다)
+        
+        # 임시로 '주소 확인불가'를 반환하도록 함 (오류 확인용)
+        # (실제 스크래핑 코드가 이 아래에 있어야 함)
+        row = {"주소": "주소 확인불가 (임시)", "관리비": "관리비 확인불가 (임시)", ... (이하 생략)}
 
-        # 1) 주소 + 관리비
-        try:
-            loc_text = wait.until(
-                EC.presence_of_element_located((
-                    By.CSS_SELECTOR,
-                    'div.css-1563yu1.r-aw03qq.r-1wbh5a2.r-1w6e6rj.r-159m18f.r-1b43r93.r-16dba41.r-rjixqe'
-                ))
-            ).text.strip()
-        except Exception:
-            loc_text = ""
-
-        # " · " 기준으로 분리 → "서울시 성북구 상월곡동  · 관리비 9.5만원"
-        if " · " in loc_text:
-            address, manage_fee = loc_text.split(" · ", 1)
-        else:
-            address = loc_text
-            manage_fee = None
-
-        # 2) 페이지 전체 텍스트
-        full = driver.find_element(By.TAG_NAME, "body").text
-
-        # 3) 보증금 / 월세  (예: "월세 1,000/53")
-        m = re.search(r"월세\s*([\d,]+)\s*/\s*([\d,]+)", full)
-        if m:
-            deposit = m.group(1)
-            rent = m.group(2)
-        else:
-            deposit = None
-            rent = None
-
-        # 4) 전용면적  (예: "전용 21.45m²")
-        area_match = re.search(r"전용\s*([\d\.]+)m²", full)
-        area = area_match.group(1) if area_match else None
-
-        # 5) 상세 설명
-        desc = None
-        start_idx = None
-        for key in ["상세 설명", "특징 및 기타 사항"]:
-            if key in full:
-                start_idx = full.index(key)
-                break
-
-        if start_idx is not None:
-            desc_full = full[start_idx:]
-            end_idx = desc_full.find("더보기")
-            desc = desc_full[:end_idx].strip() if end_idx != -1 else desc_full.strip()
-
-        return {
-            "주소": address,
-            "관리비": manage_fee,
-            "보증금": deposit,
-            "월세": rent,
-            "전용면적": area,
-            "상세설명": desc
-        }
-
+    except Exception as e:
+        # (오류 처리 로직)
+        print(f"스크래핑 중 오류: {e}")
+        row = {"주소": "오류 발생", "관리비": "오류 발생", ... (이하 생략)}
+    
     finally:
         driver.quit()
+
+    return row
 
 
 # ================================
@@ -422,4 +389,5 @@ if st.button("위험도 분석 시작하기 🚀"):
         except Exception as e:
             st.error(f"분석 중 오류가 발생했습니다: {e}")
             st.error("URL이 정확한지, 또는 직방 페이지 구조/크롬 드라이버 환경을 확인해주세요.")
+
 
