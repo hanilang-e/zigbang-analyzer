@@ -298,6 +298,16 @@ if st.button("위험도 분석 시작하기 🚀") and avg_df is not None:
             with st.spinner("매물 정보를 스크래핑하고 위험도를 분석 중입니다... 잠시만 기다려주세요."):
                 driver = get_driver()
                 scraped_df = scrape_zigbang_data(url, driver)
+                # --- 🕵️ [최후 수단] HTML 소스 코드 디버깅 ---
+                st.subheader("🕵️ [디버깅] 서버가 실제로 본 HTML 소스")
+                try:
+                    page_html = driver.page_source
+                    # 너무 길기 때문에 앞부분 5000자만 표시
+                    st.code(page_html[:5000] + "\n\n... (이후 생략) ...")
+                except Exception as e:
+                    st.error(f"HTML 소스 코드를 가져오는 데 실패했습니다: {e}")
+                st.divider()
+                # --- 디버깅 끝 ---
                 
                 # --- 디버깅 섹션 (스크래핑 직후 결과 확인) ---
                 with st.expander("🕵️ [디버깅] 1. 스크래핑 원본 데이터", expanded=False):
@@ -346,6 +356,7 @@ if st.button("위험도 분석 시작하기 🚀") and avg_df is not None:
         except Exception as e:
             st.error(f"분석 중 오류가 발생했습니다: {e}")
             st.error("URL이 정확한지, 또는 직방의 페이지 구조가 또 변경되지 않았는지 확인해주세요.")
+
 
 
 
