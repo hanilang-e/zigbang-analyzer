@@ -9,7 +9,6 @@ import time # 스피너 효과를 위해 추가
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -98,11 +97,13 @@ def calc_manage_fee_risk(manage_fee_str, desc):
 @st.cache_resource
 def get_driver():
     options = Options()
-    options.add_argument("--headless") # Streamlit 실행 시 브라우저 창이 뜨지 않게 함
+    options.add_argument("--headless") 
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+
+    # Streamlit Cloud에 설치된 chromedriver의 경로를 직접 지정합니다.
     driver = webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()),
+        service=Service('/usr/bin/chromedriver'), 
         options=options
     )
     return driver
@@ -271,4 +272,5 @@ if st.button("위험도 분석 시작하기 🚀") and avg_df is not None:
                 
         except Exception as e:
             st.error(f"분석 중 오류가 발생했습니다: {e}")
+
             st.error("URL이 정확한지, 또는 직방의 페이지 구조가 변경되지 않았는지 확인해주세요.")
