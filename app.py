@@ -121,40 +121,50 @@ def load_avg_data():
 # ==========================================================
 #  3. 스크래핑 함수 (🚨 중요! 이 부분이 수정되었습니다)
 # ==========================================================
+# ==========================================================
+#  3. 스크래핑 함수 (🚨 중요! 이 부분이 수정되었습니다)
+# ==========================================================
 def scrape_zigbang_data(url, driver):
     driver.get(url)
     wait = WebDriverWait(driver, 10)
     
     # --- 각 항목을 개별 CSS 선택자로 정확하게 타겟팅 ---
+    # 각 항목이 실패하더라도 (None), 다른 항목은 계속 진행하도록 try-except로 감쌈
     
+    address = None
     try:
         # 1) 주소 (예: "서울시 관악구 신림동")
         address = wait.until(
             EC.presence_of_element_located((
-                By.CSS_SELECTOR,
-                'p.css-11r0d9n' # 👈 (수정됨) 주소 선택자
+                By.XPATH,
+                "//div[contains(@class, 'css-')]/p[contains(@class, 'css-') and contains(text(), ' ')]"
             ))
         ).text.strip()
+        # '방 내놓기' 등의 텍스트가 잡히는 것을 방지
+        if ' ' not in address: 
+            address = None # "신림동" 같이 공백 없는 텍스트는 주소가 아님
     except Exception:
-        address = "주소 확인불가"
+        pass # 실패 시 address는 None으로 유지
 
+    manage_fee = None
     try:
         # 2) 관리비 (예: "관리비 10만원")
         manage_fee = wait.until(
             EC.presence_of_element_located((
-                By.CSS_SELECTOR,
-                'p.css-1883p3k' # 👈 (수정됨) 관리비 선택자
+                By.XPATH,
+                "//p[contains(@class, 'css-') and contains(text(), '관리비')]"
             ))
         ).text.strip()
     except Exception:
         manage_fee = "관리비 확인불가" # 관리비 항목이 없는 경우
 
+    deposit, rent = None, None
     try:
         # 3) 보증금 / 월세 (예: "월세 1,000/50")
         price_text = wait.until(
             EC.presence_of_element_located((
-                By.CSS_SELECTOR,
-                'p.css-p2jfs' # 👈 (수정됨) 가격 선택자
+                By.XPATH,
+                "//p[contains(@class, 'css-') and (contains(text(), '/') or contains(text(), '전세'))]"
             ))
         ).text.strip()
         
@@ -163,34 +173,36 @@ def scrape_zigbang_data(url, driver):
             deposit = m.group(1)
             rent = m.group(2)
         else:
-            deposit, rent = None, None
+            deposit, rent = None, None # 전세 등 다른 케이스
     except Exception:
-        deposit, rent = None, None
+        pass
 
+    area = None
     try:
         # 4) 전용면적 (예: "20.78m²")
         area_text = wait.until(
             EC.presence_of_element_located((
                 By.XPATH,
-                "//span[contains(text(), 'm²') and contains(@class, 'css-')]" # 👈 (수정됨) m²가 포함된 span
+                "//span[contains(text(), 'm²') and contains(@class, 'css-')]"
             ))
         ).text.strip()
         
         area_match = re.search(r"([\d\.]+)m²", area_text)
         area = area_match.group(1) if area_match else None
     except Exception:
-        area = None
+        pass
 
+    desc = None
     try:
         # 5) 상세설명
         desc = wait.until(
             EC.presence_of_element_located((
-                By.CSS_SELECTOR,
-                'div.css-18i9sc3' # 👈 (수정됨) 상세설명 전체 박스
+                By.XPATH,
+                "//div[p[contains(text(), '상세 설명')]]/div[contains(@class, 'css-')]"
             ))
         ).text.strip()
     except Exception:
-        desc = None
+        pass # 상세설명 못찾으면 None
 
     # --- 스크래핑 결과 취합 ---
     row = {
@@ -325,4 +337,5 @@ if st.button("위험도 분석 시작하기 🚀") and avg_df is not None:
         except Exception as e:
             st.error(f"분석 중 오류가 발생했습니다: {e}")
             st.error("URL이 정확한지, 또는 직방의 페이지 구조가 또 변경되지 않았는지 확인해주세요.")
+
 
