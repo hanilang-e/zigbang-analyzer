@@ -304,7 +304,7 @@ if st.button("위험도 분석 시작하기 🚀") and avg_df is not None:
                 st.subheader("📈 위험 점수 세부 내역")
                 
                 col1, col2, col3 = st.columns(3)
-                col1.metric("💰 가격 점수", f"{result['가격위EM 점수']} 점")
+                col1.metric("💰 가격 점수", f"{result['가격위험점수']} 점")
                 col2.metric("🔑 키워드 점수", f"{result['키워드위험개수']} 점")
                 col3.metric("🧾 관리비 점수", f"{result['관리비위험점수']} 점")
 
@@ -325,3 +325,4 @@ if st.button("위험도 분석 시작하기 🚀") and avg_df is not None:
         except Exception as e:
             st.error(f"분석 중 오류가 발생했습니다: {e}")
             st.error("URL이 정확한지, 또는 직방의 페이지 구조가 또 변경되지 않았는지 확인해주세요.")
+
