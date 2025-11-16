@@ -96,6 +96,10 @@ def calc_manage_fee_risk(manage_fee_str, desc):
 #  2. Streamlit 캐시 및 드라이버 설정
 # ==========================================================
 
+# ==========================================================
+#  2. Streamlit 캐시 및 드라이버 설정
+# ==========================================================
+
 @st.cache_resource
 def get_driver():
     options = Options()
@@ -103,6 +107,11 @@ def get_driver():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     
+    # --- 🕵️ 이게 핵심입니다 ---
+    # "나는 봇이 아니라, 윈도우에서 실행되는 진짜 크롬 브라우저입니다" 라고 속이는 헤더
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36")
+    # ------------------------
+
     # Streamlit Cloud에 설치된 chromedriver의 경로를 직접 지정합니다.
     driver = webdriver.Chrome(
         service=Service('/usr/bin/chromedriver'), 
@@ -337,5 +346,6 @@ if st.button("위험도 분석 시작하기 🚀") and avg_df is not None:
         except Exception as e:
             st.error(f"분석 중 오류가 발생했습니다: {e}")
             st.error("URL이 정확한지, 또는 직방의 페이지 구조가 또 변경되지 않았는지 확인해주세요.")
+
 
 
